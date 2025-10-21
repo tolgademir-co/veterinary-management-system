@@ -1,0 +1,43 @@
+# ====================================
+# 🧠 IntelliJ IDEA & Java / Maven Ignore
+# ====================================
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+target/
+
+# ====================================
+# ⚙️ Logs & Temp Files
+# ====================================
+logs/
+*.log
+*.tmp
+
+# ====================================
+# 🔒 Environment & Config Files
+# ====================================
+*.env
+application-*.yml
+application-*.properties
+
+# Ancak özel veritabanı ayar dosyan hariç tutulmalı:
+!src/main/resources/application-vetdb.properties
+
+# ====================================
+# 💻 OS Specific Files
+# ====================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ====================================
+# 🧩 Misc
+# ====================================
+# IntelliJ cache veya build system dosyaları
+*.class
+*.jar
+*.war
+*.ear
