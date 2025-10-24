@@ -1,5 +1,7 @@
 package com.tolgademir.veterinarymanagementsystem.service;
 
+import com.tolgademir.veterinarymanagementsystem.exception.BusinessRuleException;
+import com.tolgademir.veterinarymanagementsystem.exception.ResourceNotFoundException;
 import com.tolgademir.veterinarymanagementsystem.model.Appointment;
 import com.tolgademir.veterinarymanagementsystem.repository.AppointmentRepository;
 import com.tolgademir.veterinarymanagementsystem.repository.AvailableDateRepository;
@@ -17,48 +19,41 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
     private final AvailableDateRepository availableDateRepository;
 
-    // Tüm randevuları getir
     public List<Appointment> getAll() {
         return appointmentRepository.findAll();
     }
 
-    // ID ile getir
     public Appointment getById(Long id) {
         return appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
     }
 
-    // Randevu oluştur (iş kuralları dahil)
     public Appointment create(Appointment appointment) {
-
         Long doctorId = appointment.getDoctor().getId();
         LocalDate appointmentDay = appointment.getAppointmentDate().toLocalDate();
         LocalDateTime appointmentDateTime = appointment.getAppointmentDate();
 
-        // 1️⃣ Doktor o gün çalışıyor mu kontrolü
+        // Doktor o gün çalışıyor mu?
         boolean isAvailableDay = availableDateRepository
                 .existsByDoctorIdAndAvailableDate(doctorId, appointmentDay);
-
         if (!isAvailableDay) {
-            throw new RuntimeException("Doctor is not available on this date.");
+            throw new BusinessRuleException("Doctor is not available on this date.");
         }
 
-        // 2️⃣ Aynı saatte başka randevusu var mı kontrolü
+        // Aynı saatte başka randevu var mı?
         boolean hasConflict = appointmentRepository
                 .existsByDoctorIdAndAppointmentDate(doctorId, appointmentDateTime);
-
         if (hasConflict) {
-            throw new RuntimeException("Doctor already has an appointment at this time.");
+            throw new BusinessRuleException("Doctor already has an appointment at this time.");
         }
 
-        // 3️⃣ Her şey uygunsa randevuyu kaydet
+        // Uygunluk sağlandı → kayıt oluştur
         return appointmentRepository.save(appointment);
     }
 
-    // Güncelle
     public Appointment update(Long id, Appointment updatedAppointment) {
         Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
 
         appointment.setAppointmentDate(updatedAppointment.getAppointmentDate());
         appointment.setDoctor(updatedAppointment.getDoctor());
@@ -67,20 +62,17 @@ public class AppointmentService {
         return appointmentRepository.save(appointment);
     }
 
-    // Sil
     public void delete(Long id) {
         if (!appointmentRepository.existsById(id)) {
-            throw new RuntimeException("Appointment not found with id: " + id);
+            throw new ResourceNotFoundException("Appointment not found with id: " + id);
         }
         appointmentRepository.deleteById(id);
     }
 
-    // Doktora göre tarih aralığı filtreleme
     public List<Appointment> getByDoctorAndDateRange(Long doctorId, LocalDateTime start, LocalDateTime end) {
         return appointmentRepository.findByDoctorIdAndAppointmentDateBetween(doctorId, start, end);
     }
 
-    // Hayvana göre tarih aralığı filtreleme
     public List<Appointment> getByAnimalAndDateRange(Long animalId, LocalDateTime start, LocalDateTime end) {
         return appointmentRepository.findByAnimalIdAndAppointmentDateBetween(animalId, start, end);
     }
