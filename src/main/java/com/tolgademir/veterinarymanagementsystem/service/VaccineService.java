@@ -1,70 +1,56 @@
 package com.tolgademir.veterinarymanagementsystem.service;
 
-import com.tolgademir.veterinarymanagementsystem.exception.DuplicateRecordException;
-import com.tolgademir.veterinarymanagementsystem.exception.ResourceNotFoundException;
+import com.tolgademir.veterinarymanagementsystem.dto.VaccineDto;
 import com.tolgademir.veterinarymanagementsystem.model.Vaccine;
 import com.tolgademir.veterinarymanagementsystem.repository.VaccineRepository;
-import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class VaccineService {
 
     private final VaccineRepository vaccineRepository;
+    private final ModelMapper modelMapper;
 
-    public List<Vaccine> getAll() {
-        return vaccineRepository.findAll();
+    public VaccineService(VaccineRepository vaccineRepository, ModelMapper modelMapper) {
+        this.vaccineRepository = vaccineRepository;
+        this.modelMapper = modelMapper;
     }
 
-    public Vaccine getById(Long id) {
-        return vaccineRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Vaccine not found with id: " + id));
+    public List<VaccineDto> getAll() {
+        return vaccineRepository.findAll()
+                .stream()
+                .map(vaccine -> modelMapper.map(vaccine, VaccineDto.class))
+                .collect(Collectors.toList());
     }
 
-    public List<Vaccine> getByAnimalId(Long animalId) {
-        return vaccineRepository.findByAnimalId(animalId);
-    }
-
-    public List<Vaccine> getByProtectionFinishDateRange(LocalDate start, LocalDate end) {
-        return vaccineRepository.findByProtectionFinishDateBetween(start, end);
-    }
-
-    public Vaccine create(Vaccine vaccine) {
-        boolean existsActive = vaccineRepository.existsByAnimalIdAndNameAndCodeAndProtectionFinishDateAfter(
-                vaccine.getAnimal().getId(),
-                vaccine.getName(),
-                vaccine.getCode(),
-                LocalDate.now()
-        );
-
-        if (existsActive) {
-            throw new DuplicateRecordException("An active vaccine of this type already exists for the animal.");
-        }
-
-        return vaccineRepository.save(vaccine);
-    }
-
-    public Vaccine update(Long id, Vaccine updatedVaccine) {
+    public VaccineDto getById(Long id) {
         Vaccine vaccine = vaccineRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Vaccine not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Vaccine not found with ID: " + id));
+        return modelMapper.map(vaccine, VaccineDto.class);
+    }
 
-        vaccine.setName(updatedVaccine.getName());
-        vaccine.setCode(updatedVaccine.getCode());
-        vaccine.setProtectionStartDate(updatedVaccine.getProtectionStartDate());
-        vaccine.setProtectionFinishDate(updatedVaccine.getProtectionFinishDate());
-        vaccine.setAnimal(updatedVaccine.getAnimal());
+    public VaccineDto create(VaccineDto dto) {
+        Vaccine vaccine = modelMapper.map(dto, Vaccine.class);
+        return modelMapper.map(vaccineRepository.save(vaccine), VaccineDto.class);
+    }
 
-        return vaccineRepository.save(vaccine);
+    public VaccineDto update(Long id, VaccineDto dto) {
+        Vaccine existing = vaccineRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Vaccine not found with ID: " + id));
+
+        existing.setCode(dto.getCode());
+        existing.setName(dto.getName());
+        existing.setProtectionStartDate(dto.getProtectionStartDate());
+        existing.setProtectionFinishDate(dto.getProtectionFinishDate());
+
+        return modelMapper.map(vaccineRepository.save(existing), VaccineDto.class);
     }
 
     public void delete(Long id) {
-        if (!vaccineRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Vaccine not found with id: " + id);
-        }
         vaccineRepository.deleteById(id);
     }
 }

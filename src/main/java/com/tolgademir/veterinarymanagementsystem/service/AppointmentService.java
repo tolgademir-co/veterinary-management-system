@@ -1,79 +1,83 @@
 package com.tolgademir.veterinarymanagementsystem.service;
 
-import com.tolgademir.veterinarymanagementsystem.exception.BusinessRuleException;
-import com.tolgademir.veterinarymanagementsystem.exception.ResourceNotFoundException;
+import com.tolgademir.veterinarymanagementsystem.dto.AppointmentDto;
+import com.tolgademir.veterinarymanagementsystem.model.Animal;
 import com.tolgademir.veterinarymanagementsystem.model.Appointment;
+import com.tolgademir.veterinarymanagementsystem.model.Doctor;
+import com.tolgademir.veterinarymanagementsystem.repository.AnimalRepository;
 import com.tolgademir.veterinarymanagementsystem.repository.AppointmentRepository;
-import com.tolgademir.veterinarymanagementsystem.repository.AvailableDateRepository;
-import lombok.RequiredArgsConstructor;
+import com.tolgademir.veterinarymanagementsystem.repository.DoctorRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
-    private final AvailableDateRepository availableDateRepository;
+    private final DoctorRepository doctorRepository;
+    private final AnimalRepository animalRepository;
+    private final ModelMapper modelMapper;
 
-    public List<Appointment> getAll() {
-        return appointmentRepository.findAll();
+    public AppointmentService(AppointmentRepository appointmentRepository,
+                              DoctorRepository doctorRepository,
+                              AnimalRepository animalRepository,
+                              ModelMapper modelMapper) {
+        this.appointmentRepository = appointmentRepository;
+        this.doctorRepository = doctorRepository;
+        this.animalRepository = animalRepository;
+        this.modelMapper = modelMapper;
     }
 
-    public Appointment getById(Long id) {
-        return appointmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+    public List<AppointmentDto> getAll() {
+        return appointmentRepository.findAll()
+                .stream()
+                .map(app -> modelMapper.map(app, AppointmentDto.class))
+                .collect(Collectors.toList());
     }
 
-    public Appointment create(Appointment appointment) {
-        Long doctorId = appointment.getDoctor().getId();
-        LocalDate appointmentDay = appointment.getAppointmentDate().toLocalDate();
-        LocalDateTime appointmentDateTime = appointment.getAppointmentDate();
-
-        // Doktor o gün çalışıyor mu?
-        boolean isAvailableDay = availableDateRepository
-                .existsByDoctorIdAndAvailableDate(doctorId, appointmentDay);
-        if (!isAvailableDay) {
-            throw new BusinessRuleException("Doctor is not available on this date.");
-        }
-
-        // Aynı saatte başka randevu var mı?
-        boolean hasConflict = appointmentRepository
-                .existsByDoctorIdAndAppointmentDate(doctorId, appointmentDateTime);
-        if (hasConflict) {
-            throw new BusinessRuleException("Doctor already has an appointment at this time.");
-        }
-
-        // Uygunluk sağlandı → kayıt oluştur
-        return appointmentRepository.save(appointment);
-    }
-
-    public Appointment update(Long id, Appointment updatedAppointment) {
+    public AppointmentDto getById(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Appointment not found with ID: " + id));
+        return modelMapper.map(appointment, AppointmentDto.class);
+    }
 
-        appointment.setAppointmentDate(updatedAppointment.getAppointmentDate());
-        appointment.setDoctor(updatedAppointment.getDoctor());
-        appointment.setAnimal(updatedAppointment.getAnimal());
+    public AppointmentDto create(AppointmentDto dto) {
+        Doctor doctor = doctorRepository.findById(dto.getDoctorId())
+                .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + dto.getDoctorId()));
 
-        return appointmentRepository.save(appointment);
+        Animal animal = animalRepository.findById(dto.getAnimalId())
+                .orElseThrow(() -> new RuntimeException("Animal not found with ID: " + dto.getAnimalId()));
+
+        Appointment appointment = new Appointment();
+        appointment.setAppointmentDate(dto.getAppointmentDate());
+        appointment.setDoctor(doctor);
+        appointment.setAnimal(animal);
+
+        return modelMapper.map(appointmentRepository.save(appointment), AppointmentDto.class);
+    }
+
+    public AppointmentDto update(Long id, AppointmentDto dto) {
+        Appointment existing = appointmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appointment not found with ID: " + id));
+
+        existing.setAppointmentDate(dto.getAppointmentDate());
+
+        Doctor doctor = doctorRepository.findById(dto.getDoctorId())
+                .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + dto.getDoctorId()));
+
+        Animal animal = animalRepository.findById(dto.getAnimalId())
+                .orElseThrow(() -> new RuntimeException("Animal not found with ID: " + dto.getAnimalId()));
+
+        existing.setDoctor(doctor);
+        existing.setAnimal(animal);
+
+        return modelMapper.map(appointmentRepository.save(existing), AppointmentDto.class);
     }
 
     public void delete(Long id) {
-        if (!appointmentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Appointment not found with id: " + id);
-        }
         appointmentRepository.deleteById(id);
-    }
-
-    public List<Appointment> getByDoctorAndDateRange(Long doctorId, LocalDateTime start, LocalDateTime end) {
-        return appointmentRepository.findByDoctorIdAndAppointmentDateBetween(doctorId, start, end);
-    }
-
-    public List<Appointment> getByAnimalAndDateRange(Long animalId, LocalDateTime start, LocalDateTime end) {
-        return appointmentRepository.findByAnimalIdAndAppointmentDateBetween(animalId, start, end);
     }
 }

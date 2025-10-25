@@ -1,51 +1,40 @@
 package com.tolgademir.veterinarymanagementsystem.controller;
 
-import com.tolgademir.veterinarymanagementsystem.model.Vaccine;
+import com.tolgademir.veterinarymanagementsystem.dto.VaccineDto;
 import com.tolgademir.veterinarymanagementsystem.service.VaccineService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/vaccines")
-@RequiredArgsConstructor
 public class VaccineController {
 
     private final VaccineService vaccineService;
 
+    public VaccineController(VaccineService vaccineService) {
+        this.vaccineService = vaccineService;
+    }
+
     @GetMapping
-    public ResponseEntity<List<Vaccine>> getAll() {
+    public ResponseEntity<List<VaccineDto>> getAll() {
         return ResponseEntity.ok(vaccineService.getAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Vaccine> getById(@PathVariable Long id) {
+    public ResponseEntity<VaccineDto> getById(@PathVariable Long id) {
         return ResponseEntity.ok(vaccineService.getById(id));
     }
 
-    @GetMapping("/animal/{animalId}")
-    public ResponseEntity<List<Vaccine>> getByAnimalId(@PathVariable Long animalId) {
-        return ResponseEntity.ok(vaccineService.getByAnimalId(animalId));
-    }
-
-    @GetMapping("/protection")
-    public ResponseEntity<List<Vaccine>> getByProtectionFinishDateRange(
-            @RequestParam LocalDate start,
-            @RequestParam LocalDate end) {
-        return ResponseEntity.ok(vaccineService.getByProtectionFinishDateRange(start, end));
-    }
-
     @PostMapping
-    public ResponseEntity<Vaccine> create(@RequestBody Vaccine vaccine) {
-        return ResponseEntity.ok(vaccineService.create(vaccine));
+    public ResponseEntity<VaccineDto> create(@RequestBody VaccineDto dto) {
+        return ResponseEntity.ok(vaccineService.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Vaccine> update(@PathVariable Long id, @RequestBody Vaccine vaccine) {
-        return ResponseEntity.ok(vaccineService.update(id, vaccine));
+    public ResponseEntity<VaccineDto> update(@PathVariable Long id, @RequestBody VaccineDto dto) {
+        return ResponseEntity.ok(vaccineService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")

@@ -1,53 +1,38 @@
 package com.tolgademir.veterinarymanagementsystem.service;
 
-import com.tolgademir.veterinarymanagementsystem.exception.ResourceNotFoundException;
+import com.tolgademir.veterinarymanagementsystem.dto.CustomerDto;
 import com.tolgademir.veterinarymanagementsystem.model.Customer;
 import com.tolgademir.veterinarymanagementsystem.repository.CustomerRepository;
-import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class CustomerService {
 
     private final CustomerRepository customerRepository;
+    private final ModelMapper modelMapper;
 
-    public List<Customer> getAll() {
-        return customerRepository.findAll();
+    public CustomerService(CustomerRepository customerRepository, ModelMapper modelMapper) {
+        this.customerRepository = customerRepository;
+        this.modelMapper = modelMapper;
     }
 
-    public Optional<Customer> getById(Long id) {
-        return customerRepository.findById(id);
+    public List<CustomerDto> getAll() {
+        return customerRepository.findAll()
+                .stream()
+                .map(customer -> modelMapper.map(customer, CustomerDto.class))
+                .collect(Collectors.toList());
     }
 
-    public List<Customer> searchByName(String name) {
-        return customerRepository.findByNameContainingIgnoreCase(name);
-    }
-
-    public Customer create(Customer customer) {
-        return customerRepository.save(customer);
-    }
-
-    public Customer update(Long id, Customer updatedCustomer) {
-        Customer existing = customerRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
-
-        existing.setName(updatedCustomer.getName());
-        existing.setMail(updatedCustomer.getMail());
-        existing.setPhone(updatedCustomer.getPhone());
-        existing.setCity(updatedCustomer.getCity());
-        existing.setAddress(updatedCustomer.getAddress());
-
-        return customerRepository.save(existing);
+    public CustomerDto create(CustomerDto dto) {
+        Customer customer = modelMapper.map(dto, Customer.class);
+        return modelMapper.map(customerRepository.save(customer), CustomerDto.class);
     }
 
     public void delete(Long id) {
-        if (!customerRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Customer not found with id: " + id);
-        }
         customerRepository.deleteById(id);
     }
 }

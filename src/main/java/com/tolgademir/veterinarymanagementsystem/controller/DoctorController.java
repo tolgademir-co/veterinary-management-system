@@ -1,8 +1,7 @@
 package com.tolgademir.veterinarymanagementsystem.controller;
 
-import com.tolgademir.veterinarymanagementsystem.model.Doctor;
+import com.tolgademir.veterinarymanagementsystem.dto.DoctorDto;
 import com.tolgademir.veterinarymanagementsystem.service.DoctorService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,29 +9,31 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/doctors")
-@RequiredArgsConstructor
 public class DoctorController {
 
     private final DoctorService doctorService;
+    public DoctorController(DoctorService doctorService) {
+        this.doctorService = doctorService;
+    }
 
     @GetMapping
-    public ResponseEntity<List<Doctor>> getAll() {
+    public ResponseEntity<List<DoctorDto>> getAll() {
         return ResponseEntity.ok(doctorService.getAll());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Doctor> getById(@PathVariable Long id) {
+    public ResponseEntity<DoctorDto> getById(@PathVariable Long id) {
         return ResponseEntity.ok(doctorService.getById(id));
     }
 
     @PostMapping
-    public ResponseEntity<Doctor> create(@RequestBody Doctor doctor) {
-        return ResponseEntity.ok(doctorService.create(doctor));
+    public ResponseEntity<DoctorDto> create(@RequestBody DoctorDto dto) {
+        return ResponseEntity.ok(doctorService.create(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Doctor> update(@PathVariable Long id, @RequestBody Doctor doctor) {
-        return ResponseEntity.ok(doctorService.update(id, doctor));
+    public ResponseEntity<DoctorDto> update(@PathVariable Long id, @RequestBody DoctorDto dto) {
+        return ResponseEntity.ok(doctorService.update(id, dto));
     }
 
     @DeleteMapping("/{id}")

@@ -1,49 +1,56 @@
 package com.tolgademir.veterinarymanagementsystem.service;
 
-import com.tolgademir.veterinarymanagementsystem.exception.ResourceNotFoundException;
+import com.tolgademir.veterinarymanagementsystem.dto.DoctorDto;
 import com.tolgademir.veterinarymanagementsystem.model.Doctor;
 import com.tolgademir.veterinarymanagementsystem.repository.DoctorRepository;
-import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class DoctorService {
 
     private final DoctorRepository doctorRepository;
+    private final ModelMapper modelMapper;
 
-    public List<Doctor> getAll() {
-        return doctorRepository.findAll();
+    public DoctorService(DoctorRepository doctorRepository, ModelMapper modelMapper) {
+        this.doctorRepository = doctorRepository;
+        this.modelMapper = modelMapper;
     }
 
-    public Doctor getById(Long id) {
-        return doctorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
+    public List<DoctorDto> getAll() {
+        return doctorRepository.findAll()
+                .stream()
+                .map(doctor -> modelMapper.map(doctor, DoctorDto.class))
+                .collect(Collectors.toList());
     }
 
-    public Doctor create(Doctor doctor) {
-        return doctorRepository.save(doctor);
-    }
-
-    public Doctor update(Long id, Doctor updatedDoctor) {
+    public DoctorDto getById(Long id) {
         Doctor doctor = doctorRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + id));
+        return modelMapper.map(doctor, DoctorDto.class);
+    }
 
-        doctor.setName(updatedDoctor.getName());
-        doctor.setPhone(updatedDoctor.getPhone());
-        doctor.setMail(updatedDoctor.getMail());
-        doctor.setAddress(updatedDoctor.getAddress());
-        doctor.setCity(updatedDoctor.getCity());
+    public DoctorDto create(DoctorDto dto) {
+        Doctor doctor = modelMapper.map(dto, Doctor.class);
+        return modelMapper.map(doctorRepository.save(doctor), DoctorDto.class);
+    }
 
-        return doctorRepository.save(doctor);
+    public DoctorDto update(Long id, DoctorDto dto) {
+        Doctor existing = doctorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + id));
+
+        existing.setName(dto.getName());
+        existing.setPhone(dto.getPhone());
+        existing.setMail(dto.getMail());
+        existing.setCity(dto.getCity());
+
+        return modelMapper.map(doctorRepository.save(existing), DoctorDto.class);
     }
 
     public void delete(Long id) {
-        if (!doctorRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Doctor not found with id: " + id);
-        }
         doctorRepository.deleteById(id);
     }
 }

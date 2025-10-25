@@ -211,10 +211,7 @@ Server starts at:
 ---
 
 ## 🧠 UML Diagram
-
-- UML diagram created with Lucidchart
-- and included in the project root as:
-- **📄 uml-diagram.png**
+![UML Diagram](./uml-diagram.png)
 
 ---
 
