@@ -1,217 +1,233 @@
-# 🩺 Veterinary Management System
+# 🐾 Veterinary Management System
 
-A RESTful backend application built with **Java 21**, **Spring Boot**, and **PostgreSQL**.  
-This project was developed as a final project to demonstrate layered architecture, business rules, and REST API design for a veterinary clinic management system.
+A RESTful API project built with **Spring Boot**, **Java 21**, and **PostgreSQL**,  
+designed to manage all operational processes of a **veterinary clinic** — including doctor scheduling, animal registration, vaccination tracking, and appointment management.
 
----
-
-## 🚀 Project Overview
-This project is developed as part of the **Patika+ Back-End Developer Bootcamp** Final Assignment.  
-It allows a veterinary clinic to:
-- Register customers (pet owners) and their animals
-- Record vaccines for animals with protection period checks
-- Register doctors and define their available working dates
-- Create appointments by checking doctor availability and schedule conflicts
-
+This project was developed as a **graduation project** for the Patika+ Back-End Bootcamp.
 
 ---
 
 ## 🚀 Technologies
+
 - Java 21
-- Spring Boot 3.5+
+- Spring Boot 3.3+
+- Spring Web
 - Spring Data JPA
 - PostgreSQL 16+
-- Maven
 - Lombok
-- Postman (for API testing)
+- Maven
 
 ---
 
 ## 📂 Project Structure
 
-`src/main/java/com/tolgademir/veterinarymanagementsystem`
+```
 
-├── **model** → Entity classes (`Animal`, `Customer`, `Doctor`, `Appointment`, `AvailableDate`, `Vaccine`)  
-├── **repository** → Data access layer (JPA interfaces)  
-├── **service** → Business logic & validation rules  
-├── **controller** → REST API endpoints  
-├── **exception** → Custom exceptions & global error handling  
-└── **config** → Database and CORS configuration
+VeterinaryManagementSystem/
+│
+├── src/
+│   ├── main/
+│   │   ├── java/com/tolgademir/veterinarymanagementsystem/
+│   │   │   ├── controller/        # REST API endpoints
+│   │   │   ├── service/           # Business logic layer
+│   │   │   ├── repository/        # Data access layer (DAO)
+│   │   │   ├── model/             # Entities (Animal, Customer, Doctor, etc.)
+│   │   │   └── exception/         # Custom exceptions
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       ├── schema.sql         # Database structure
+│   │       ├── seed_data.sql      # Initial test data
+│   │       └── postman/           # Postman collection (API tests)
+│   └── test/                      # Unit tests (optional)
+│
+├── pom.xml
+└── README.md
 
----
-
-## 👤 User Roles
-- **Veterinary Employee**
-    - Add / Update / Delete / List Customers
-    - Add / Update / Delete / List Animals
-    - Add / Update / Delete / List Doctors
-    - Add / Delete Available Dates for Doctors
-    - Create / Update / Delete Appointments
-    - Record / Update / Delete Vaccines
-    - Filter by name, doctor, animal, and date ranges
-
----
-
-## 📌 Business Rules
-- A doctor can only take appointments **on available dates**.
-- A doctor **cannot have overlapping appointments** at the same time.
-- A vaccine cannot be added if **an active vaccine of the same type exists** for the animal.
-- Deleting a customer also deletes **all animals and related records**.
-- All endpoints return **meaningful HTTP status codes** and **custom error messages**.
-- Request validation and exception handling are properly implemented.
+```
 
 ---
 
-## 🗄️ Database Schema
+## 🧩 Entities & Relationships
 
-**customers**
-- id (PK)
-- name
-- phone
-- mail
-- address
-- city
+| Entity | Description | Key Relationships |
+|---------|--------------|------------------|
+| **Customer** | Pet owner information | One-to-Many → Animals |
+| **Animal** | Pet details | Many-to-One → Customer |
+| **Doctor** | Veterinarian info | One-to-Many → AvailableDates, Appointments |
+| **AvailableDate** | Doctor’s available working dates | Many-to-One → Doctor |
+| **Appointment** | Pet appointments with doctors | Many-to-One → Doctor, Animal |
+| **Vaccine** | Pet vaccination info | Many-to-One → Animal |
 
-**animals**
-- id (PK)
-- name
-- species
-- breed
-- gender
-- colour
-- date_of_birth
-- customer_id (FK → customers.id)
+---
 
-**doctors**
-- id (PK)
-- name
-- phone
-- mail
-- address
-- city
+## 🧱 Database Schema
 
-**available_dates**
-- id (PK)
-- doctor_id (FK → doctors.id)
-- available_date
+📄 **File:** [`src/main/resources/schema.sql`](./src/main/resources/schema.sql)
 
-**appointments**
-- id (PK)
-- doctor_id (FK → doctors.id)
-- animal_id (FK → animals.id)
-- appointment_date
+```sql
+CREATE TABLE customers ();
+CREATE TABLE animals ();
+CREATE TABLE doctors ();
+CREATE TABLE available_dates ();
+CREATE TABLE appointments ();
+CREATE TABLE vaccines ();
 
-**vaccines**
-- id (PK)
-- animal_id (FK → animals.id)
-- name
-- code
-- protection_start_date
-- protection_finish_date
+```
 
 ---
 
 ## 🌱 Seed Data
 
-Example test data from `seed_data.sql`:
+**File:** [`src/main/resources/seed_data.sql`](.src/main/resources/seed_data.sql)
 
-### Customers
-- Tolga Demir — Beylikdüzü, İstanbul
-- Merve Aksoy — Kadıköy, İstanbul
+#### The file includes at least 5 sample records for each table:
 
-### Animals
-- Leo 🐈 — British Shorthair
-- Mia 🐕 — Golden Retriever
+- 5 Customers
 
-### Doctors
-- Dr. Gökhan Kandemir — Ataşehir
-- Dr. Ayşe Yılmaz — Beşiktaş
+- 5 Animals
 
-### Appointments
-- Leo → Dr. Gökhan (2025-10-25 14:00)
-- Mia → Dr. Ayşe (2025-10-26 10:00)
+- 5 Doctors
 
-### Vaccines
-- Rabies → valid until 2025-01-01
-- Distemper → valid until 2025-03-10
+- 5 Available Dates
+
+- 5 Appointments
+
+- 5 Vaccines
+
+---
+
+## 🔁 Database Reset Script
+
+If you want to clear all data and start fresh before re-importing **seed_data.sql:**
+
+```sql
+TRUNCATE TABLE
+    appointments,
+    available_dates,
+    vaccines,
+    animals,
+    doctors,
+    customers
+RESTART IDENTITY CASCADE;
+```
+
+---
+
+## 📫 API Endpoints (Overview)
+
+| Module            | Method | Endpoint                        | Description                     |
+| ----------------- | ------ | ------------------------------- | ------------------------------- |
+| **Customer**      | POST   | `/api/customers`                | Create customer                 |
+|                   | GET    | `/api/customers`                | Get all customers               |
+|                   | GET    | `/api/customers/{id}`           | Get by ID                       |
+|                   | PUT    | `/api/customers/{id}`           | Update customer                 |
+|                   | DELETE | `/api/customers/{id}`           | Delete customer                 |
+| **Animal**        | POST   | `/api/animals`                  | Create animal                   |
+|                   | GET    | `/api/animals`                  | Get all animals                 |
+|                   | GET    | `/api/animals/name/{name}`      | Filter by name                  |
+|                   | GET    | `/api/animals/customer/{id}`    | Filter by owner                 |
+| **Doctor**        | POST   | `/api/doctors`                  | Add doctor                      |
+|                   | GET    | `/api/doctors`                  | List doctors                    |
+| **AvailableDate** | POST   | `/api/available-dates`          | Add available day               |
+| **Appointment**   | POST   | `/api/appointments`             | Create appointment              |
+|                   | GET    | `/api/appointments`             | Get all appointments            |
+|                   | GET    | `/api/appointments/doctor/{id}` | Filter by doctor & date range   |
+|                   | GET    | `/api/appointments/animal/{id}` | Filter by animal & date range   |
+| **Vaccine**       | POST   | `/api/vaccines`                 | Add vaccine                     |
+|                   | GET    | `/api/vaccines`                 | List all vaccines               |
+|                   | GET    | `/api/vaccines/animal/{id}`     | List by animal                  |
+|                   | GET    | `/api/vaccines/protection`      | Filter by protection date range |
+
+---
+
+## ⚙️ Business Rules
+
+✅ Randevu Kontrolü
+
+Randevu oluşturulurken,
+
+Doktorun o tarihte müsait günü yoksa hata verir:
+
+“Doktor bu tarihte çalışmamaktadır!”
+
+Doktorun aynı saat için başka randevusu varsa hata verir:
+
+“Girilen saatte başka bir randevu mevcuttur!”
+
+✅ Aşı Koruyuculuk Kontrolü
+
+Aynı hayvan + aynı aşı kodu + bitmemiş koruyuculuk varsa yeni kayıt engellenir.
+
+✅ Cascade Silme Kuralı
+
+Customer silindiğinde → tüm hayvanları, aşıları ve randevuları da otomatik silinir.
+
+✅ Custom Exceptions
+
+**RecordNotFoundException**, **ConflictException**, **DoctorNotAvailableException**, **AppointmentConflictException**
+
+---
+
+## 🧾 Postman Collection
+
+All endpoints are documented and tested in Postman.
+Collection file:
+VeterinaryManagementSystem.postman_collection.json
+
+Import this file into Postman to test all CRUD operations directly.
 
 ---
 
 ## ▶️ Run Instructions
 
-1. Create PostgreSQL database:
-   ```sql
-   CREATE DATABASE veterinary_db;
-   
-2. Run schema.sql to create tables.
+1️⃣ Create Database
 
-3. Run seed_data.sql to insert sample data.
+```sql
+CREATE DATABASE veterinary_db;
+```
 
-4. Configure your database credentials in:
+2️⃣ Configure Connection
+```
+Update your application.properties:
 
-    ##### src/main/resources/application-vetdb.properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/veterinary_db
+spring.datasource.username=postgres
+spring.datasource.password=your_password
+```
+3️⃣ Run Schema & Seed
+```sql
+\i 'src/main/resources/schema.sql';
+\i 'src/main/resources/seed_data.sql';
+```
+4️⃣ Start Spring Boot App
+```
+In IntelliJ:
 
-5. Run the application:
-
-    #### VeterinaryManagementSystemApplication
-
----
-
-## 📖 Example API Flow
-Create Appointment Example
-
-POST /api/appointments
-
-Content-Type: application/json
-
-{
-
-"doctor": { "id": 1 },
-
-"animal": { "id": 1 },
-
-"appointmentDate": "2025-10-25T14:00:00"
-
-}
-
-## ✅ Returns:
-
-{
-
-"id": 1,
-
-"appointmentDate": "2025-10-25T14:00:00",
-
-"doctor": { "id": 1, "name": "Dr. Gökhan Kandemir" },
-
-"animal": { "id": 1, "name": "Leo" }
-
-}
+Run → VeterinaryManagementSystemApplication
+```
+Server starts at:
+👉 http://localhost:8080
 
 ---
 
-## 🧩 UML Diagram
+## 🧠 UML Diagram
 
-Entity relationship diagram (ERD) illustrating the project structure is included:
+- UML diagram created with Lucidchart
+- and included in the project root as:
+- **📄 uml-diagram.png**
 
-### 📄 uml_diagram.png
+---
+
+## 🧑‍💻 Author
+**Tolga Demir**
+
+```Back-End Developer | Java | Spring Boot | PostgreSQL```
+- [GitHub](https://github.com/tolgademir-co)
+- [LinkedIn](https://www.linkedin.com/in/tolgademir-co/)
 
 ---
 
 ## 📜 License
 
-This project is part of Patika+ Back-End Developer Bootcamp and distributed under the MIT License.
-You may use or modify it for educational purposes with proper credit.
-
----
-
-## 👤 Author
-
-Tolga Demir
-
-Back-End Developer | Java | Spring Boot | PostgreSQL
-
-[GitHub](https://github.com/tolgademir-co) · [LinkedIn](https://www.linkedin.com/in/tolgademir-co/)
-
-
-
+This project is licensed under the MIT License.
+You are free to use, modify, and distribute it with attribution.

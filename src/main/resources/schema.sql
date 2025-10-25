@@ -1,3 +1,19 @@
+-- Sorgu performansını artırmak için sık sorgulanan sütunlar üzerinde indeks oluşturuldu.
+CREATE INDEX idx_customer_name ON customers(name);
+CREATE INDEX idx_animal_name ON animals(name);
+CREATE INDEX idx_vaccine_code ON vaccines(code);
+CREATE INDEX idx_doctor_name ON doctors(name);
+
+
+-- Clean tables before inserting
+DROP TABLE IF EXISTS customers CASCADE;
+DROP TABLE IF EXISTS animals CASCADE;
+DROP TABLE IF EXISTS doctors CASCADE;
+DROP TABLE IF EXISTS available_dates CASCADE;
+DROP TABLE IF EXISTS appointments CASCADE;
+DROP TABLE IF EXISTS vaccines CASCADE;
+
+
 -- ===================================
 -- VETERINARY MANAGEMENT SYSTEM SCHEMA
 -- ===================================
