@@ -8,22 +8,37 @@
 out/
 target/
 
+# Maven Wrapper cache (keep scripts)
+.mvn/wrapper/maven-wrapper.jar
+
 # ====================================
 # ⚙️ Logs & Temp Files
 # ====================================
 logs/
 *.log
 *.tmp
+*.bak
+*.orig
+*.swp
 
 # ====================================
-# 🔒 Environment & Config Files
+# 🔒 Sensitive Configuration Files
 # ====================================
-*.env
-application-*.yml
-application-*.properties
+# Hide database credentials and SQL schema/data files
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+src/main/resources/schema.sql
+src/main/resources/seed_data.sql
+.env
 
-# Ancak özel veritabanı ayar dosyan hariç tutulmalı:
-!src/main/resources/application-vetdb.properties
+# ====================================
+# 🧩 Postman, Coverage, UML
+# ====================================
+src/main/resources/postman/
+coverage/
+test-output/
+uml/
+*.drawio
 
 # ====================================
 # 💻 OS Specific Files
@@ -34,9 +49,16 @@ ehthumbs.db
 Desktop.ini
 
 # ====================================
-# 🧩 Misc
+# 🧩 IntelliJ Cache & HTTP Requests
 # ====================================
-# IntelliJ cache veya build system dosyaları
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/shelf/
+.idea/httpRequests/
+
+# ====================================
+# 📦 Compiled Files
+# ====================================
 *.class
 *.jar
 *.war

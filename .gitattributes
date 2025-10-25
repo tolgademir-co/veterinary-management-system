@@ -1,2 +1,37 @@
+# ===============================
+# 🐾 Veterinary Management System
+# Git configuration for cross-platform consistency
+# ===============================
+
+# --- Default behavior for all text files ---
+* text=auto
+
+# --- Maven Wrapper Scripts ---
 /mvnw text eol=lf
 *.cmd text eol=crlf
+
+# --- Java & Resource Files ---
+*.java text eol=lf
+*.xml text eol=lf
+*.sql text eol=lf
+*.properties text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+
+# --- Binary Files (no diff) ---
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.gif binary
+*.pdf binary
+
+# --- GitHub Linguist (for accurate language stats) ---
+*.sql linguist-language=SQL
+*.md  linguist-language=Markdown
+
+# --- Optional: ignore IDE specific folders when exporting ---
+/.idea/ export-ignore
+/.vscode/ export-ignore
+/postman/ export-ignore
