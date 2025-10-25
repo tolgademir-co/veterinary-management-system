@@ -1,7 +1,9 @@
 package com.tolgademir.veterinarymanagementsystem.service;
 
 import com.tolgademir.veterinarymanagementsystem.dto.VaccineDto;
+import com.tolgademir.veterinarymanagementsystem.model.Animal;
 import com.tolgademir.veterinarymanagementsystem.model.Vaccine;
+import com.tolgademir.veterinarymanagementsystem.repository.AnimalRepository;
 import com.tolgademir.veterinarymanagementsystem.repository.VaccineRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -13,10 +15,14 @@ import java.util.stream.Collectors;
 public class VaccineService {
 
     private final VaccineRepository vaccineRepository;
+    private final AnimalRepository animalRepository;
     private final ModelMapper modelMapper;
 
-    public VaccineService(VaccineRepository vaccineRepository, ModelMapper modelMapper) {
+    public VaccineService(VaccineRepository vaccineRepository,
+                          AnimalRepository animalRepository,
+                          ModelMapper modelMapper) {
         this.vaccineRepository = vaccineRepository;
+        this.animalRepository = animalRepository;
         this.modelMapper = modelMapper;
     }
 
@@ -34,7 +40,19 @@ public class VaccineService {
     }
 
     public VaccineDto create(VaccineDto dto) {
-        Vaccine vaccine = modelMapper.map(dto, Vaccine.class);
+        // 🔹 1. İlişkili hayvanı bul
+        Animal animal = animalRepository.findById(dto.getAnimalId())
+                .orElseThrow(() -> new RuntimeException("Animal not found with ID: " + dto.getAnimalId()));
+
+        // 🔹 2. Vaccine nesnesini oluştur ve ilişkilendir
+        Vaccine vaccine = new Vaccine();
+        vaccine.setCode(dto.getCode());
+        vaccine.setName(dto.getName());
+        vaccine.setProtectionStartDate(dto.getProtectionStartDate());
+        vaccine.setProtectionFinishDate(dto.getProtectionFinishDate());
+        vaccine.setAnimal(animal); // 🔥 ilişki burada kuruldu
+
+        // 🔹 3. Kaydet ve DTO olarak döndür
         return modelMapper.map(vaccineRepository.save(vaccine), VaccineDto.class);
     }
 
@@ -46,6 +64,12 @@ public class VaccineService {
         existing.setName(dto.getName());
         existing.setProtectionStartDate(dto.getProtectionStartDate());
         existing.setProtectionFinishDate(dto.getProtectionFinishDate());
+
+        if (dto.getAnimalId() != null) {
+            Animal animal = animalRepository.findById(dto.getAnimalId())
+                    .orElseThrow(() -> new RuntimeException("Animal not found with ID: " + dto.getAnimalId()));
+            existing.setAnimal(animal);
+        }
 
         return modelMapper.map(vaccineRepository.save(existing), VaccineDto.class);
     }

@@ -1,28 +1,27 @@
 # 🐾 Veterinary Management System
 
-A RESTful API project built with **Spring Boot**, **Java 21**, and **PostgreSQL**,  
-designed to manage all operational processes of a **veterinary clinic** — including doctor scheduling, animal registration, vaccination tracking, and appointment management.
-
-This project was developed as a **graduation project** for the Patika+ Back-End Bootcamp.
+A RESTful **Veterinary Management System** built with **Spring Boot (Java 21)** and **PostgreSQL**.  
+The project follows **layered architecture** principles and provides CRUD operations for managing  
+customers, animals, doctors, available dates, vaccines, and appointments.
 
 ---
 
+
 ## 🚀 Technologies
 
-- Java 21
-- Spring Boot 3.3+
-- Spring Web
-- Spring Data JPA
-- PostgreSQL 16+
-- Lombok
-- Maven
+- **Java 21**
+- **Spring Boot 3.5.6**
+- **Spring Data JPA (Hibernate)**
+- **PostgreSQL 17**
+- **Lombok**
+- **ModelMapper**
+- **Postman** (for API testing)
+- **Maven**
 
 ---
 
 ## 📂 Project Structure
-
 ```
-
 VeterinaryManagementSystem/
 │
 ├── src/
@@ -42,21 +41,20 @@ VeterinaryManagementSystem/
 │
 ├── pom.xml
 └── README.md
-
 ```
-
 ---
 
 ## 🧩 Entities & Relationships
 
-| Entity | Description | Key Relationships |
-|---------|--------------|------------------|
-| **Customer** | Pet owner information | One-to-Many → Animals |
-| **Animal** | Pet details | Many-to-One → Customer |
-| **Doctor** | Veterinarian info | One-to-Many → AvailableDates, Appointments |
-| **AvailableDate** | Doctor’s available working dates | Many-to-One → Doctor |
-| **Appointment** | Pet appointments with doctors | Many-to-One → Doctor, Animal |
-| **Vaccine** | Pet vaccination info | Many-to-One → Animal |
+| Entity            | Description                        | Relationships                                    |
+| ----------------- | ---------------------------------- | ------------------------------------------------ |
+| **Customer**      | Pet owner information              | One-to-Many → Animals                            |
+| **Animal**        | Pet details                        | Many-to-One → Customer<br>One-to-Many → Vaccines |
+| **Vaccine**       | Vaccination records                | Many-to-One → Animal                             |
+| **Doctor**        | Veterinarian info                  | One-to-Many → AvailableDates                     |
+| **AvailableDate** | Doctor’s available working dates   | Many-to-One → Doctor                             |
+| **Appointment**   | Animal’s appointment with a doctor | Many-to-One → Doctor<br>Many-to-One → Animal     |
+
 
 ---
 
@@ -65,20 +63,22 @@ VeterinaryManagementSystem/
 📄 **File:** [`src/main/resources/schema.sql`](./src/main/resources/schema.sql)
 
 ```sql
-CREATE TABLE customers ();
-CREATE TABLE animals ();
-CREATE TABLE doctors ();
-CREATE TABLE available_dates ();
-CREATE TABLE appointments ();
-CREATE TABLE vaccines ();
-
+CREATE TABLE customers
+(
+    id      SERIAL PRIMARY KEY,
+    name    VARCHAR(100),
+    phone   VARCHAR(20),
+    mail    VARCHAR(100),
+    address VARCHAR(255),
+    city    VARCHAR(100)
+);
 ```
 
 ---
 
 ## 🌱 Seed Data
 
-**File:** [`src/main/resources/seed_data.sql`](.src/main/resources/seed_data.sql)
+**File:** [`src/main/resources/seed_data.sql`](./src/main/resources/seed_data.sql)
 
 #### The file includes at least 5 sample records for each table:
 
@@ -142,29 +142,24 @@ RESTART IDENTITY CASCADE;
 
 ## ⚙️ Business Rules
 
-✅ Randevu Kontrolü
+### ✅ Appointment Rules
+- A doctor cannot take appointments on a day they are not available.
+- A doctor cannot have more than one appointment at the same date & time.
+- Throws: `DoctorNotAvailableException`, `AppointmentConflictException`
 
-Randevu oluşturulurken,
+### ✅ Vaccine Rules
+- A new vaccine cannot be added if another active vaccine with the same code exists for the same animal.
+- Throws: `ConflictException`
 
-Doktorun o tarihte müsait günü yoksa hata verir:
+### ✅ Cascade Rules
+- When a **Customer** is deleted → all related **Animals**, **Vaccines**, and **Appointments** are deleted automatically (Cascade).
 
-“Doktor bu tarihte çalışmamaktadır!”
-
-Doktorun aynı saat için başka randevusu varsa hata verir:
-
-“Girilen saatte başka bir randevu mevcuttur!”
-
-✅ Aşı Koruyuculuk Kontrolü
-
-Aynı hayvan + aynı aşı kodu + bitmemiş koruyuculuk varsa yeni kayıt engellenir.
-
-✅ Cascade Silme Kuralı
-
-Customer silindiğinde → tüm hayvanları, aşıları ve randevuları da otomatik silinir.
-
-✅ Custom Exceptions
-
-**RecordNotFoundException**, **ConflictException**, **DoctorNotAvailableException**, **AppointmentConflictException**
+### ✅ Global Exception Handling
+- Custom exceptions:
+    - `RecordNotFoundException`
+    - `ConflictException`
+    - `DoctorNotAvailableException`
+    - `AppointmentConflictException`
 
 ---
 
