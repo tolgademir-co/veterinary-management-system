@@ -3,7 +3,7 @@
 -- ===================================
 
 -- Drop existing tables safely // Toplu silmek istersen
-DROP TABLE IF EXISTS appointments,available_dates,vaccines,animals,doctors,customers CASCADE;
+DROP TABLE IF EXISTS animals,doctors,available_dates,appointments,vaccines CASCADE;
 
 -- Clean tables before inserting // tek tek silmek istersen
 DROP TABLE IF EXISTS customers CASCADE;
@@ -12,6 +12,14 @@ DROP TABLE IF EXISTS doctors CASCADE;
 DROP TABLE IF EXISTS available_dates CASCADE;
 DROP TABLE IF EXISTS appointments CASCADE;
 DROP TABLE IF EXISTS vaccines CASCADE;
+
+-- 2️⃣ Sequence resetle (gerekirse)
+ALTER SEQUENCE animals_id_seq RESTART WITH 1;
+ALTER SEQUENCE appointments_id_seq RESTART WITH 1;
+ALTER SEQUENCE available_dates_id_seq RESTART WITH 1;
+ALTER SEQUENCE customers_id_seq RESTART WITH 1;
+ALTER SEQUENCE doctors_id_seq RESTART WITH 1;
+ALTER SEQUENCE vaccines_id_seq RESTART WITH 1;
 
 
 -- 🧍 CUSTOMERS
