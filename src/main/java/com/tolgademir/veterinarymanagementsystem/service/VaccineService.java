@@ -1,6 +1,9 @@
 package com.tolgademir.veterinarymanagementsystem.service;
 
 import com.tolgademir.veterinarymanagementsystem.dto.VaccineDto;
+import com.tolgademir.veterinarymanagementsystem.exception.BusinessRuleException;
+import com.tolgademir.veterinarymanagementsystem.exception.DuplicateRecordException;
+import com.tolgademir.veterinarymanagementsystem.exception.ResourceNotFoundException;
 import com.tolgademir.veterinarymanagementsystem.model.Animal;
 import com.tolgademir.veterinarymanagementsystem.model.Vaccine;
 import com.tolgademir.veterinarymanagementsystem.repository.AnimalRepository;
@@ -35,30 +38,44 @@ public class VaccineService {
 
     public VaccineDto getById(Long id) {
         Vaccine vaccine = vaccineRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vaccine not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Vaccine not found with ID: " + id));
         return modelMapper.map(vaccine, VaccineDto.class);
     }
 
+    // ------------------------------------------------------------
+    // CREATE VACCINE (with protection period and duplicate check)
+    // ------------------------------------------------------------
     public VaccineDto create(VaccineDto dto) {
-        // 🔹 1. İlişkili hayvanı bul
         Animal animal = animalRepository.findById(dto.getAnimalId())
-                .orElseThrow(() -> new RuntimeException("Animal not found with ID: " + dto.getAnimalId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Animal not found with ID: " + dto.getAnimalId()));
 
-        // 🔹 2. Vaccine nesnesini oluştur ve ilişkilendir
+        // Aynı kodlu aşı zaten varsa hata fırlat
+        boolean isDuplicate = vaccineRepository.existsByAnimalIdAndNameAndCodeAndProtectionFinishDateAfter(
+                dto.getAnimalId(), dto.getName(), dto.getCode(), dto.getProtectionStartDate());
+        if (isDuplicate) {
+            throw new DuplicateRecordException("Bu aşı kodu veya adıyla koruyuculuğu devam eden bir kayıt zaten mevcut!");
+        }
+
+        // Koruyuculuk kontrolü
+        boolean isProtected = vaccineRepository.existsByAnimalIdAndNameAndProtectionFinishDateAfter(
+                dto.getAnimalId(), dto.getName(), dto.getProtectionStartDate());
+        if (isProtected) {
+            throw new BusinessRuleException("Bu hayvan için aynı isimli aşının koruyuculuk süresi hâlâ devam ediyor!");
+        }
+
         Vaccine vaccine = new Vaccine();
         vaccine.setCode(dto.getCode());
         vaccine.setName(dto.getName());
         vaccine.setProtectionStartDate(dto.getProtectionStartDate());
         vaccine.setProtectionFinishDate(dto.getProtectionFinishDate());
-        vaccine.setAnimal(animal); // 🔥 ilişki burada kuruldu
+        vaccine.setAnimal(animal);
 
-        // 🔹 3. Kaydet ve DTO olarak döndür
         return modelMapper.map(vaccineRepository.save(vaccine), VaccineDto.class);
     }
 
     public VaccineDto update(Long id, VaccineDto dto) {
         Vaccine existing = vaccineRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Vaccine not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Vaccine not found with ID: " + id));
 
         existing.setCode(dto.getCode());
         existing.setName(dto.getName());
@@ -67,7 +84,7 @@ public class VaccineService {
 
         if (dto.getAnimalId() != null) {
             Animal animal = animalRepository.findById(dto.getAnimalId())
-                    .orElseThrow(() -> new RuntimeException("Animal not found with ID: " + dto.getAnimalId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Animal not found with ID: " + dto.getAnimalId()));
             existing.setAnimal(animal);
         }
 
@@ -75,6 +92,8 @@ public class VaccineService {
     }
 
     public void delete(Long id) {
-        vaccineRepository.deleteById(id);
+        Vaccine vaccine = vaccineRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vaccine not found with ID: " + id));
+        vaccineRepository.delete(vaccine);
     }
 }

@@ -1,6 +1,8 @@
 package com.tolgademir.veterinarymanagementsystem.service;
 
 import com.tolgademir.veterinarymanagementsystem.dto.AppointmentDto;
+import com.tolgademir.veterinarymanagementsystem.exception.BusinessRuleException;
+import com.tolgademir.veterinarymanagementsystem.exception.ResourceNotFoundException;
 import com.tolgademir.veterinarymanagementsystem.model.Animal;
 import com.tolgademir.veterinarymanagementsystem.model.Appointment;
 import com.tolgademir.veterinarymanagementsystem.model.Doctor;
@@ -31,6 +33,9 @@ public class AppointmentService {
         this.modelMapper = modelMapper;
     }
 
+    // ------------------------------------------------------------
+    // GET ALL APPOINTMENTS
+    // ------------------------------------------------------------
     public List<AppointmentDto> getAll() {
         return appointmentRepository.findAll()
                 .stream()
@@ -38,18 +43,32 @@ public class AppointmentService {
                 .collect(Collectors.toList());
     }
 
+    // ------------------------------------------------------------
+    // GET APPOINTMENT BY ID
+    // ------------------------------------------------------------
     public AppointmentDto getById(Long id) {
         Appointment appointment = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with ID: " + id));
         return modelMapper.map(appointment, AppointmentDto.class);
     }
 
+    // ------------------------------------------------------------
+    // CREATE APPOINTMENT (with conflict check)
+    // ------------------------------------------------------------
     public AppointmentDto create(AppointmentDto dto) {
+
         Doctor doctor = doctorRepository.findById(dto.getDoctorId())
-                .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + dto.getDoctorId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with ID: " + dto.getDoctorId()));
 
         Animal animal = animalRepository.findById(dto.getAnimalId())
-                .orElseThrow(() -> new RuntimeException("Animal not found with ID: " + dto.getAnimalId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Animal not found with ID: " + dto.getAnimalId()));
+
+        // Randevu çakışma kontrolü
+        boolean isConflict = appointmentRepository.existsByDoctorIdAndAppointmentDate(
+                dto.getDoctorId(), dto.getAppointmentDate());
+        if (isConflict) {
+            throw new BusinessRuleException("Bu doktorun bu tarih ve saatte başka bir randevusu bulunmaktadır!");
+        }
 
         Appointment appointment = new Appointment();
         appointment.setAppointmentDate(dto.getAppointmentDate());
@@ -59,25 +78,38 @@ public class AppointmentService {
         return modelMapper.map(appointmentRepository.save(appointment), AppointmentDto.class);
     }
 
+    // ------------------------------------------------------------
+    // UPDATE APPOINTMENT
+    // ------------------------------------------------------------
     public AppointmentDto update(Long id, AppointmentDto dto) {
         Appointment existing = appointmentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Appointment not found with ID: " + id));
-
-        existing.setAppointmentDate(dto.getAppointmentDate());
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with ID: " + id));
 
         Doctor doctor = doctorRepository.findById(dto.getDoctorId())
-                .orElseThrow(() -> new RuntimeException("Doctor not found with ID: " + dto.getDoctorId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found with ID: " + dto.getDoctorId()));
 
         Animal animal = animalRepository.findById(dto.getAnimalId())
-                .orElseThrow(() -> new RuntimeException("Animal not found with ID: " + dto.getAnimalId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Animal not found with ID: " + dto.getAnimalId()));
 
+        boolean isConflict = appointmentRepository.existsByDoctorIdAndAppointmentDate(
+                dto.getDoctorId(), dto.getAppointmentDate());
+        if (isConflict && !existing.getId().equals(id)) {
+            throw new BusinessRuleException("Bu doktorun bu tarih ve saatte başka bir randevusu bulunmaktadır!");
+        }
+
+        existing.setAppointmentDate(dto.getAppointmentDate());
         existing.setDoctor(doctor);
         existing.setAnimal(animal);
 
         return modelMapper.map(appointmentRepository.save(existing), AppointmentDto.class);
     }
 
+    // ------------------------------------------------------------
+    // DELETE APPOINTMENT
+    // ------------------------------------------------------------
     public void delete(Long id) {
-        appointmentRepository.deleteById(id);
+        Appointment appointment = appointmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found with ID: " + id));
+        appointmentRepository.delete(appointment);
     }
 }

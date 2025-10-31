@@ -10,12 +10,21 @@ import java.util.List;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-    // Doktora ve tarih aralığına göre filtreleme
+    // ------------------------------------------------------------
+    // 📅 Doktora ve tarih aralığına göre filtreleme
+    // Belirli bir doktorun belirtilen tarih aralığındaki randevularını getirir
+    // ------------------------------------------------------------
     List<Appointment> findByDoctorIdAndAppointmentDateBetween(Long doctorId, LocalDateTime start, LocalDateTime end);
 
-    // Hayvana ve tarih aralığına göre filtreleme
+    // ------------------------------------------------------------
+    // 🐾 Hayvana ve tarih aralığına göre filtreleme
+    // Belirli bir hayvanın belirtilen tarih aralığındaki randevularını getirir
+    // ------------------------------------------------------------
     List<Appointment> findByAnimalIdAndAppointmentDateBetween(Long animalId, LocalDateTime start, LocalDateTime end);
 
-    // Doktorun o saatte başka randevusu var mı?
-    boolean existsByDoctorIdAndAppointmentDate(Long doctorId, LocalDateTime dateTime);
+    // ------------------------------------------------------------
+    // ⛔ Doktorun o tarih ve saatte başka randevusu var mı?
+    // Randevu çakışma kontrolü için kullanılır
+    // ------------------------------------------------------------
+    boolean existsByDoctorIdAndAppointmentDate(Long doctorId, LocalDateTime appointmentDate);
 }

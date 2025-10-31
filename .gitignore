@@ -25,11 +25,11 @@ logs/
 # 🔒 Sensitive Configuration Files
 # ====================================
 # Hide database credentials and SQL schema/data files
-src/main/resources/application.properties
-src/main/resources/application-*.properties
-src/main/resources/schema.sql
-src/main/resources/seed_data.sql
-.env
+#src/main/resources/application.properties
+#src/main/resources/application-*.properties
+#src/main/resources/schema.sql
+#src/main/resources/seed_data.sql
+#.env
 
 # ====================================
 # 🧩 Postman, Coverage, UML

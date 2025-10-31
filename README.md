@@ -145,29 +145,27 @@ RESTART IDENTITY CASCADE;
 ### ✅ Appointment Rules
 - A doctor cannot take appointments on a day they are not available.
 - A doctor cannot have more than one appointment at the same date & time.
-- Throws: `DoctorNotAvailableException`, `AppointmentConflictException`
+- Throws: `BusinessRuleException`, `ResourceNotFoundException`
 
 ### ✅ Vaccine Rules
 - A new vaccine cannot be added if another active vaccine with the same code exists for the same animal.
-- Throws: `ConflictException`
+- Throws: `DuplicateRecordException`
 
 ### ✅ Cascade Rules
-- When a **Customer** is deleted → all related **Animals**, **Vaccines**, and **Appointments** are deleted automatically (Cascade).
+- When a Customer is deleted → all related Animals, Vaccines, and Appointments are deleted automatically (Cascade).
 
 ### ✅ Global Exception Handling
 - Custom exceptions:
-    - `RecordNotFoundException`
-    - `ConflictException`
-    - `DoctorNotAvailableException`
-    - `AppointmentConflictException`
+    - `ResourceNotFoundException`
+    - `DuplicateRecordException`
+    - `BusinessRuleException`
 
 ---
 
 ## 🧾 Postman Collection
 
 All endpoints are documented and tested in Postman.
-Collection file:
-VeterinaryManagementSystem.postman_collection.json
+- Collection file: **VeterinaryManagementSystem.postman_collection.json**
 
 Import this file into Postman to test all CRUD operations directly.
 
@@ -205,15 +203,235 @@ Server starts at:
 
 ---
 
+## 🧪 Postman API Test Guide (Short Version)
+
+Bu rehber, projenin temel API uç noktalarını hızlıca test etmek için hazırlanmıştır.  
+Tüm isteklerin Base URL’si: http://localhost:8080/api
+
+---
+
+### 🐾 1️⃣ Customer Testleri
+
+**Yeni müşteri ekle (POST)**
+
+`POST /api/customers`
+```json
+{
+  "name": "Tolga Demir",
+  "phone": "05321234567",
+  "mail": "tolga@example.com",
+  "address": "Beylikdüzü, İstanbul",
+  "city": "İstanbul"
+}
+```
+**Tüm müşterileri listele (GET)**
+
+`GET /api/customers`
+
+---
+
+### 🐶 2️⃣ Animal Testi
+
+**Yeni hayvan ekle (POST)**
+
+`GET /api/animals`
+```json
+{
+"name": "Leo",
+"species": "Cat",
+"breed": "British Shorthair",
+"gender": "Male",
+"colour": "Gray",
+"dateOfBirth": "2020-05-15",
+"customerId": 1
+}
+```
+
+---
+
+### 🩺 3️⃣ Doctor & AvailableDate
+
+**Yeni doktor ekle (POST)**
+
+`POST /api/doctors`
+```json
+{
+"name": "Dr. Selin Yılmaz",
+"phone": "05321230000",
+"mail": "selin.yilmaz@vetclinic.com",
+"address": "Kadıköy, İstanbul",
+"city": "İstanbul"
+}
+```
+**Doktora uygun gün ekle (POST)**
+
+`POST /api/available-dates`
+```json
+{
+"availableDate": "2025-11-02",
+"doctorId": 1
+}
+```
+
+---
+
+### 📅 4️⃣ Appointment Testleri
+
+**Yeni randevu oluştur (POST)**
+
+`POST /api/appointments`
+```json
+{
+"appointmentDate": "2025-11-05T10:00:00",
+"doctorId": 1,
+"animalId": 1
+}
+```
+**Randevu çakışma testi (aynı tarih–saat)**
+```json
+{
+"appointmentDate": "2025-11-05T10:00:00",
+"doctorId": 1,
+"animalId": 2
+}
+```
+
+### 🧠 Beklenen sonuç:
+
+- 400 Bad Request
+- **"Bu doktorun bu tarih ve saatte başka bir randevusu bulunmaktadır!"**
+
+---
+
+### 💉 5️⃣ Vaccine Testleri
+
+**Yeni aşı ekle (POST)**
+
+`POST /api/vaccines`
+```json
+{
+"code": "KDZ-001",
+"name": "Kuduz Aşısı",
+"protectionStartDate": "2025-10-01",
+"protectionFinishDate": "2026-04-01",
+"animalId": 1
+}
+```
+**Aynı isimli aşı ekleme (koruyuculuk kontrolü)**
+```json
+{
+"code": "KDZ-002",
+"name": "Kuduz Aşısı",
+"protectionStartDate": "2025-12-01",
+"protectionFinishDate": "2026-06-01",
+"animalId": 1
+}
+```
+### 🧠 Beklenen sonuç:
+- 400 Bad Request
+- **"Bu hayvan için aynı isimli aşının koruyuculuk süresi hâlâ devam ediyor!"**
+
+---
+
+| Test        | Amaç                        | Beklenen Durum                  |
+| ----------- | --------------------------- | ------------------------------- |
+| Appointment | Çakışma kontrolü            | 400 – BusinessRuleException     |
+| Vaccine     | Koruyuculuk süresi kontrolü | 400 – BusinessRuleException     |
+| Vaccine     | Aynı kod                    | 409 – DuplicateRecordException  |
+| Resource    | Bulunmayan ID               | 404 – ResourceNotFoundException |
+
+---
+
+### 📌 Not:
+Tüm GET istekleri başarılı dönüyor ve hata durumlarında
+**timestamp**, **status**, **error**, **message**, **path** alanları görünüyorsa proje sorunsuz çalışıyor demektir ✅
+
+---
+
 ## 🧠 UML Diagram
 ![UML Diagram](./uml-diagram.png)
+
+---
+
+## ⚠️ Error Handling & Business Rules
+
+Bu projede hatalar, özel **Exception sınıfları** ve **Global Exception Handler** aracılığıyla merkezi olarak yönetilir.  
+Tüm hatalar API kullanıcılarına standart JSON formatında döner.
+
+### 🔧 Exception Yapısı
+| Exception | Açıklama | HTTP Kodu |
+|------------|-----------|-----------|
+| `ResourceNotFoundException` | İstenilen kayıt bulunamadığında | `404 Not Found` |
+| `DuplicateRecordException` | Aynı verinin tekrar eklenmeye çalışılması durumunda | `409 Conflict` |
+| `BusinessRuleException` | İş kuralı ihlali durumlarında (örnek: randevu çakışması, aşı koruyuculuk kontrolü) | `400 Bad Request` |
+
+---
+
+### 🧠 Örnek JSON Hata Yanıtı
+
+```json
+{
+  "timestamp": "2025-10-31T22:14:10.992",
+  "status": 400,
+  "error": "Business Rule Violation",
+  "message": "Bu doktorun bu tarih ve saatte başka bir randevusu bulunmaktadır!",
+  "path": "/api/appointments"
+}
+```
+
+---
+
+## 💉 Örnek İş Kuralları
+
+#### 🩺 AppointmentService (Randevu Çakışması)
+- Aynı doktora aynı tarih-saatte ikinci randevu oluşturulamaz.
+- Kural ihlali durumunda BusinessRuleException fırlatılır.
+
+#### 💊 VaccineService (Aşı Koruyuculuk Süresi)
+- Aynı hayvana, koruyuculuk bitmeden aynı isimli aşı eklenemez.
+- Aynı kodlu aşı var ise DuplicateRecordException fırlatılır.
+
+---
+
+## 🧾 Global Exception Handler
+
+Tüm hatalar **@RestControllerAdvice** üzerinden yönetilir.
+
+#### Her hata yanıtı şu bilgileri içerir:
+- **timestamp** → hata zamanı
+- **status** → HTTP durum kodu
+- **error** → hata tipi
+- **message** → hata mesajı
+- **path** → istek yapılan endpoint
+
+---
+
+## 🧩 Örnek Başarılı Yanıt
+```json
+{
+"id": 1,
+"appointmentDate": "2025-11-05T10:00:00",
+"doctorId": 3,
+"animalId": 5
+}
+```
+---
+
+## ✅ Özet
+
+#### Bu yapı sayesinde proje:
+
+- Katmanlı mimariyi korur,
+- İş kurallarını uygular,
+- Tüm hataları REST standartlarına uygun şekilde döndürür,
+- Kullanıcıya açık, tutarlı API çıktısı sağlar.
 
 ---
 
 ## 🧑‍💻 Author
 **Tolga Demir**
 
-```Back-End Developer | Java | Spring Boot | PostgreSQL```
+**Back-End Developer | Java | Spring Boot | PostgreSQL**
 - [GitHub](https://github.com/tolgademir-co)
 - [LinkedIn](https://www.linkedin.com/in/tolgademir-co/)
 
@@ -221,5 +439,5 @@ Server starts at:
 
 ## 📜 License
 
-This project is licensed under the MIT License.
-You are free to use, modify, and distribute it with attribution.
+- This project is licensed under the MIT License.
+- You are free to use, modify, and distribute it with attribution.

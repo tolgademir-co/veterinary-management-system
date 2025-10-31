@@ -10,12 +10,36 @@ import java.util.List;
 @Repository
 public interface VaccineRepository extends JpaRepository<Vaccine, Long> {
 
-    // Hayvana göre filtreleme
+    // ------------------------------------------------------------
+    // 🐾 Hayvana göre filtreleme
+    // Belirli bir hayvana ait tüm aşıları getirir
+    // ------------------------------------------------------------
     List<Vaccine> findByAnimalId(Long animalId);
 
-    // Koruyuculuk bitiş tarihine göre filtreleme
+    // ------------------------------------------------------------
+    // 📅 Koruyuculuk bitiş tarihine göre filtreleme
+    // Belirtilen tarih aralığında biten koruyuculukları getirir
+    // ------------------------------------------------------------
     List<Vaccine> findByProtectionFinishDateBetween(LocalDate startDate, LocalDate endDate);
 
-    // Aynı tür aşı var mı kontrolü
-    boolean existsByAnimalIdAndNameAndCodeAndProtectionFinishDateAfter(Long animalId, String name, String code, LocalDate currentDate);
+    // ------------------------------------------------------------
+    // 🔎 Aynı tür ve koda sahip aşı var mı kontrolü
+    // (İsteğe bağlı genel kontrol, örnek: isim + kod bazlı)
+    // ------------------------------------------------------------
+    boolean existsByAnimalIdAndNameAndCodeAndProtectionFinishDateAfter(
+            Long animalId,
+            String name,
+            String code,
+            LocalDate currentDate
+    );
+
+    // ------------------------------------------------------------
+    // 🚫 Koruyuculuk kontrolü (iş kuralı)
+    // Aynı isimli aşının koruyuculuk süresi bitmeden tekrar eklenmesini engeller
+    // ------------------------------------------------------------
+    boolean existsByAnimalIdAndNameAndProtectionFinishDateAfter(
+            Long animalId,
+            String name,
+            LocalDate protectionStartDate
+    );
 }
